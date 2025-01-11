@@ -3,7 +3,7 @@ import json
 import time
 import os
 
-ACCESS_TOKEN = "8205c8f18205c8f18205c8f13881229ddd882058205c8f1e584e1fa9b5c2c2a97fe84b7"
+ACCESS_TOKEN = "token"
 API_VERSION = "5.131"
 BASE_URL = "https://api.vk.com/method/"
 OUTPUT_FILE = "vk_groups_filtered.json"
