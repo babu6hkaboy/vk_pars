@@ -42,8 +42,8 @@ def get_groups_by_ids(group_ids):
                 print("Ошибка API:", data.get("error", {}).get("error_msg", "Неизвестная ошибка"))
         else:
             print("Ошибка реквеста:", response.status_code)
-    except Exception as e:
-        print("Ошибка получения:", e)
+    except Exception:
+        print("Ошибка получения:")
     return []
 
 def save_to_json(data, filename):
@@ -60,8 +60,8 @@ def save_to_json(data, filename):
         with open(filename, "w", encoding="utf-8") as file:
             json.dump(existing_data, file, ensure_ascii=False, indent=4)
         print(f"Данные сохранились")
-    except Exception as e:
-        print("Ошибка сохранения:", e)
+    except Exception:
+        print("Ошибка сохранения:")
 
 def main():
     start_id = 1
