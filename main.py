@@ -2,6 +2,7 @@ import requests
 import json
 import time
 import os
+import concurrent.futures
 
 ACCESS_TOKEN = "token"
 API_VERSION = "5.131"
@@ -11,7 +12,7 @@ OUTPUT_FILE = "vk_groups_filtered.json"
 def generate_group_id(start_id, batch_size):
     group_ids = []
     for i in range(batch_size):
-        group_ids.append(f"club{str(start_id + i).zfill(6)}")
+        group_ids.append(f"public{start_id + i}")
     return group_ids
 
 def get_groups_by_ids(group_ids):
@@ -39,11 +40,11 @@ def get_groups_by_ids(group_ids):
                     for group in data["response"]
                 ]
             else:
-                print("Ошибка API:", data.get("error", {}).get("error_msg", "Неизвестная ошибка"))
+                print("API Error:", data.get("error", {}).get("error_msg", "Unknown error"))
         else:
-            print("Ошибка реквеста:", response.status_code)
+            print("Request error:", response.status_code)
     except Exception:
-        print("Ошибка получения:")
+        print("Fetching error:")
     return []
 
 def save_to_json(data, filename):
@@ -59,27 +60,44 @@ def save_to_json(data, filename):
         existing_data.extend(data)
         with open(filename, "w", encoding="utf-8") as file:
             json.dump(existing_data, file, ensure_ascii=False, indent=4)
-        print(f"Данные сохранились")
+        print(f"Data saved successfully")
     except Exception:
-        print("Ошибка сохранения:")
+        print("Saving error:")
 
 def main():
     start_id = 1
-    end_id = 100
-    batch_size = 10
-    delay = 5
+    end_id = 1000
+    batch_size = 10 
+    delay = 0
+    max_threads = 10
 
     while start_id <= end_id:
-        print(f"Старт обработки с {start_id} по {start_id + batch_size - 1}")
-        group_ids = generate_group_id(start_id, batch_size)
-        groups_info = get_groups_by_ids(group_ids)
-        if groups_info:
-            save_to_json(groups_info, OUTPUT_FILE)
+        print(f"Processing from {start_id} to {start_id + batch_size * max_threads - 1}")
+        group_id_batches = [
+            generate_group_id(start_id + i * batch_size, batch_size)
+            for i in range(max_threads)
+        ]
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(max_threads) as executor:
+            future_to_batch = {
+                executor.submit(get_groups_by_ids, batch): batch for batch in group_id_batches
+            }
+            for future in concurrent.futures.as_completed(future_to_batch):
+                try:
+                    result = future.result()
+                    if result:
+                        results.extend(result)
+                except Exception:
+                    print(f'Error {Exception}')
+        if results:
+            save_to_json(results, OUTPUT_FILE)
         else:
-            print("Баг не удалось получить информацию")
-        start_id += batch_size
-        print(f"Await {delay} секунд ")
+            print('Cant fetch INFO about public')
+        
+        start_id += batch_size * max_threads
+        print(f'Waiting {delay} seconds before the next operation')
         time.sleep(delay)
+            
 
 if __name__ == "__main__":
     main()
